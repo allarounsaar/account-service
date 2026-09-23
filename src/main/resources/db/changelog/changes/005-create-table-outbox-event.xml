@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="005-create-outbox-event-table" author="allar.ounsaar">
+        <createTable tableName="outbox_event">
+            <column name="id" type="UUID" defaultValueComputed="uuidv7()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="aggregate_type" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="aggregate_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="event_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="JSONB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)" defaultValue="PENDING">
+                <constraints nullable="false"/>
+            </column>
+            <column name="retry_count" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_error" type="TEXT"/>
+            <column name="next_retry_at" type="TIMESTAMPTZ"/>
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="published_at" type="TIMESTAMPTZ"/>
+        </createTable>
+
+        <createIndex tableName="outbox_event" indexName="idx_outbox_event_status">
+            <column name="status"/>
+        </createIndex>
+
+        <sql splitStatements="false">
+            CREATE INDEX idx_outbox_event_pending ON outbox_event (created_at) WHERE status = 'PENDING';
+
+            CREATE TRIGGER trg_outbox_event_updated_at
+                BEFORE UPDATE
+                ON outbox_event
+                FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

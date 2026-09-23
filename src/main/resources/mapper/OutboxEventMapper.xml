@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ee.allar.bank.outbox.mapper.OutboxEventMapper">
+
+    <insert id="insert"
+            parameterType="ee.allar.bank.outbox.OutboxEvent"
+            useGeneratedKeys="true"
+            keyProperty="id,createdAt"
+            keyColumn="id,created_at">
+        INSERT INTO outbox_event (aggregate_type, aggregate_id, event_type, payload, status)
+        VALUES (#{aggregateType}, #{aggregateId}, #{eventType}, #{payload}::jsonb, #{status})
+    </insert>
+
+    <select id="findPendingForUpdate" resultType="ee.allar.bank.outbox.OutboxEvent">
+        SELECT id,
+               aggregate_type,
+               aggregate_id,
+               event_type,
+               payload,
+               status,
+               retry_count,
+               last_error,
+               next_retry_at,
+               created_at,
+               updated_at,
+               published_at
+        FROM outbox_event
+        WHERE status = 'PENDING'
+          AND (next_retry_at IS NULL OR next_retry_at &lt;= NOW())
+          AND retry_count &lt; #{maxRetries}
+        ORDER BY created_at
+        LIMIT #{limit} FOR UPDATE SKIP LOCKED
+    </select>
+
+    <update id="markPublished">
+        UPDATE outbox_event
+        SET status        = 'PUBLISHED',
+            published_at  = NOW(),
+            next_retry_at = NULL,
+            last_error    = NULL
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateRetryState">
+        UPDATE outbox_event
+        SET retry_count   = #{retryCount},
+            next_retry_at = #{nextRetryAt},
+            last_error    = #{lastError}
+        WHERE id = #{id}
+    </update>
+
+    <update id="markFailed">
+        UPDATE outbox_event
+        SET status     = 'FAILED',
+            last_error = #{lastError}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

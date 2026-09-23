@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="004-create-transaction-table" author="allar.ounsaar">
+        <createTable tableName="transaction">
+            <column name="id" type="UUID" defaultValueComputed="uuidv7()">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="account_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_transaction_account_id" references="account(id)"/>
+            </column>
+            <column name="balance_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="fk_transaction_balance_id" references="balance(id)"/>
+            </column>
+            <column name="amount" type="NUMERIC(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="VARCHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="direction" type="VARCHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="balance_after" type="NUMERIC(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMPTZ" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="transaction" indexName="idx_transaction_account_id">
+            <column name="account_id"/>
+        </createIndex>
+
+        <sql>
+            ALTER TABLE transaction
+                ADD CONSTRAINT chk_direction CHECK (direction IN ('IN', 'OUT'));
+            ALTER TABLE transaction
+                ADD CONSTRAINT chk_amount_positive CHECK (amount &gt; 0);
+            ALTER TABLE transaction
+                ADD CONSTRAINT chk_currency CHECK (currency IN ('EUR', 'SEK', 'GBP', 'USD'));
+        </sql>
+
+        <sql splitStatements="false">
+            CREATE TRIGGER trg_transaction_updated_at
+                BEFORE UPDATE
+                ON transaction
+                FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+        </sql>
+    </changeSet>
+</databaseChangeLog>

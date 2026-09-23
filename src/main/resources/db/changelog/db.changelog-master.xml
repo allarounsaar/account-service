@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.29.xsd">
+
+    <include file="changes/001-create-trigger-updated-at.xml" relativeToChangelogFile="true"/>
+    <include file="changes/002-create-table-account.xml" relativeToChangelogFile="true"/>
+    <include file="changes/003-create-table-balances.xml" relativeToChangelogFile="true"/>
+    <include file="changes/004-create-table-transaction.xml" relativeToChangelogFile="true"/>
+    <include file="changes/005-create-table-outbox-event.xml" relativeToChangelogFile="true"/>
+
+</databaseChangeLog>
